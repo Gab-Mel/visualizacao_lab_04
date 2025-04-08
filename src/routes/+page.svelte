@@ -5,6 +5,7 @@
 <script>
     import projects from "$lib/projects.json";
     import Project from "$lib/Project.svelte";
+    import Pie from '$lib/Pie.svelte';
 
     
     let profileData = fetch("https://api.github.com/users/Gab-Mel");
