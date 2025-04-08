@@ -8,6 +8,7 @@
     import { onMount } from "svelte";
 
     let data = [];
+    let commits = [];
 
     onMount(async () => {
       data = await d3.csv("/loc.csv", row => ({
@@ -18,8 +19,7 @@
     date: new Date(row.date + "T00:00" + row.timezone),
     datetime: new Date(row.datetime)
 }));
-});
-let commits = [];
+
 commits = d3.groups(data, d => d.commit).map(([commit, lines]) => {
     let first = lines[0];
     let {author, date, time, timezone, datetime} = first;
@@ -42,8 +42,63 @@ commits = d3.groups(data, d => d.commit).map(([commit, lines]) => {
 
     return ret;
 });
+    console.log(commits)
+});
+
+
+
+let width = 1000, height = 600;
+
+$: minDate = d3.min(commits.map(d => d.date));
+$: maxDate = d3.max(commits.map(d => d.date));
+console.log(commits.map(d => d.date))
+$: maxDatePlusOne = new Date(maxDate);
+$: maxDatePlusOne.setDate(maxDatePlusOne.getDate() + 1);
+$: xScale = d3.scaleTime()
+              .domain([minDate, maxDatePlusOne])
+              .range([0, width])
+              .nice();
+
+$: yScale = d3.scaleLinear()
+              .domain([24, 0])
+              .range([height, 0]);
+
+let margin = {top: 10, right: 10, bottom: 30, left: 20};
+
+let usableArea = {
+    top: margin.top,
+    right: width - margin.right,
+    bottom: height - margin.bottom,
+    left: margin.left
+};
+usableArea.width = usableArea.right - usableArea.left;
+usableArea.height = usableArea.bottom - usableArea.top;
+
+let xAxis, yAxis;
+
+
+$: {
+    d3.select(xAxis).call(d3.axisBottom(xScale));
+    d3.select(yAxis).call(d3.axisLeft(yScale));
+}
 </script>
 
+
+
+<svg viewBox="0 0 {width} {height}">
+  <g class="dots">
+    {#each commits as commit, index }
+        <circle
+            cx={ xScale(commit.datetime) }
+            cy={ yScale(commit.hourFrac) }
+            r="5"
+            fill="steelblue"
+        />
+    {/each}
+    </g>
+    <g transform="translate(0, {usableArea.bottom})" bind:this={xAxis} />
+<g transform="translate({usableArea.left}, 0)" bind:this={yAxis} /> 
+</svg>
 
 <section>
   <h2>Summary</h2>
@@ -56,3 +111,10 @@ commits = d3.groups(data, d => d.commit).map(([commit, lines]) => {
   <dd>{d3.groups(data, d => d.commit).length}</dd>
   </dl>
 </section>
+
+
+<style>
+  svg {
+      overflow: visible;
+  }
+</style>
