@@ -1,4 +1,4 @@
-const ARE_WE_HOME = document.documentElement.classList.contains("home");
+/*const ARE_WE_HOME = document.documentElement.classList.contains("home");
 
 let pages = [
 	{url: ".", title: "Home"},
@@ -59,3 +59,4 @@ if (localStorage.colorScheme) {
     document.documentElement.style.setProperty("color-scheme", localStorage.colorScheme);
     select.value = localStorage.colorScheme;
 }
+*/
