@@ -7,6 +7,22 @@
     import Project from "$lib/Project.svelte";
     import Pie from '$lib/Pie.svelte';
 
+    import { onMount } from "svelte";
+
+    let githubData = null;
+    let loading = true;
+    let error = null;
+
+    onMount(async () => {
+        try {
+            const response = await fetch("https://api.github.com/users/Gab-Mel");
+            githubData = await response.json();
+        } catch (err) {
+            error = err;
+        }
+        loading = false;
+    });
+
     
     let profileData = fetch("https://api.github.com/users/Gab-Mel");
 </script>

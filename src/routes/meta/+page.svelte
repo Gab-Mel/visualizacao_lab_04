@@ -3,41 +3,56 @@
 </svelte:head>
 
 <script>
-    import projects from "$lib/projects.json";
-    import Project from "$lib/Project.svelte";
-    import Pie from '$lib/Pie.svelte';
+    import * as d3 from "d3";
 
-    
-    let profileData = fetch("https://api.github.com/users/Gab-Mel");
+    import { onMount } from "svelte";
+
+    let data = [];
+
+    onMount(async () => {
+      data = await d3.csv("/loc.csv", row => ({
+    ...row,
+    line: Number(row.line), // or just +row.line
+    depth: Number(row.depth),
+    length: Number(row.length),
+    date: new Date(row.date + "T00:00" + row.timezone),
+    datetime: new Date(row.datetime)
+}));
+});
+let commits = [];
+commits = d3.groups(data, d => d.commit).map(([commit, lines]) => {
+    let first = lines[0];
+    let {author, date, time, timezone, datetime} = first;
+    let ret = {
+        id: commit,
+        url: "https://github.com/Gab-Mel/visualizacao_lab_04/commit/" + commit,
+        author, date, time, timezone, datetime,
+        hourFrac: datetime.getHours() + datetime.getMinutes() / 60,
+        totalLines: lines.length
+    };
+
+    // Like ret.lines = lines
+    // but non-enumerable so it doesn’t show up in JSON.stringify
+    Object.defineProperty(ret, "lines", {
+        value: lines,
+        configurable: true,
+        writable: true,
+        enumerable: false,
+    });
+
+    return ret;
+});
 </script>
-<h1>
-    Gabriel 
-</h1>
-<p>
-    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Molestias nostrum corporis consequuntur dicta aspernatur voluptates magni veritatis maxime qui voluptatibus esse perspiciatis provident, explicabo eos suscipit sequi recusandae ea? Dolorum?
-</p>
-<img src="img/xinin.jpeg" alt="this is a robbery" width="300" height="350" >
 
-{#await fetch("https://api.github.com/users/Gab-Mel")}
-  <p>Loading...</p>
-{:then response}
-  {#await response.json()}
-    <p>Decoding...</p>
-  {:then data} 
-    <section>
-      <h2>My Github Stats</h2>
-      <dl>
-        <dt>Followers</dt>
-        <dd>{data.followers}</dd>
-        <dt>Following</dt>
-        <dd>{data.following}</dd>
-        <dt>Public Repos</dt>
-        <dd>{data.public_repos}</dd>
-      </dl>
-    </section>
-  {:catch error}
-    <p class="error">Something went wrong: {error.message}</p>
-  {/await}
-  {:catch error}
-    <p class="error">Something went wrong: {error.message}</p>
-{/await}
+
+<section>
+  <h2>Summary</h2>
+  <dl class="stats">
+  <dt>Total <abbr title="Lines of code">LOC</abbr></dt>
+  <dd>{data.length}</dd>
+  <dt>Files</dt>
+  <dd>{d3.groups(data, d => d.file).length}</dd>
+  <dt>Commits</dt>
+  <dd>{d3.groups(data, d => d.commit).length}</dd>
+  </dl>
+</section>
